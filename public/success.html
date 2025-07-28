@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platba úspěšná</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .success-card {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .success-icon {
+            color: #28a745;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .error-icon {
+            color: #dc3545;
+        }
+        .pending-icon {
+            color: #ffc107;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h1.success {
+            color: #28a745;
+        }
+        h1.error {
+            color: #dc3545;
+        }
+        h1.pending {
+            color: #ffc107;
+        }
+        .details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .payment-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .back-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .back-button:hover {
+            background: #0056b3;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-card" id="payment-card">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Načítání informací o platbě...</p>
+        </div>
+        
+        <div id="payment-content" style="display: none;">
+            <div class="success-icon" id="status-icon">✅</div>
+            <h1 id="status-title">Platba byla úspěšná!</h1>
+            <p id="status-message">Děkujeme za vaši objednávku. Vaše platba byla zpracována úspěšně.</p>
+            
+            <div class="payment-status" id="status-badge">ÚSPĚŠNÁ</div>
+            
+            <div class="details">
+                <h3>Detaily objednávky:</h3>
+                <p><strong>Session ID:</strong> <span id="session-id">-</span></p>
+                <p><strong>Platební brána:</strong> <span id="gateway">-</span></p>
+                <p><strong>Částka:</strong> <span id="amount">-</span> <span id="currency">-</span></p>
+                <p><strong>Email:</strong> <span id="customer-email">-</span></p>
+                <p><strong>Čas vytvoření:</strong> <span id="created-time">-</span></p>
+                <p><strong>Poslední aktualizace:</strong> <span id="updated-time">-</span></p>
+            </div>
+            
+            <p id="confirmation-message">Potvrzení o platbě vám bylo odesláno na email.</p>
+            
+            <a href="/" class="back-button">Zpět na hlavní stránku</a>
+        </div>
+    </div>
+
+    <script>
+        // Simple version without complex error handling
+        function loadPaymentInfo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            console.log('Loading payment info for session:', sessionId);
+            
+            if (!sessionId) {
+                showError('Session ID nebylo nalezeno v URL.');
+                return;
+            }
+            
+            // Simple fetch without complex error handling
+            fetch(`/api/payment-info/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('API response:', data);
+                    
+                    if (data.success && data.payment) {
+                        const payment = data.payment;
+                        
+                        // Update UI based on status
+                        const statusIcon = document.getElementById('status-icon');
+                        const statusTitle = document.getElementById('status-title');
+                        const statusMessage = document.getElementById('status-message');
+                        const statusBadge = document.getElementById('status-badge');
+                        const confirmationMessage = document.getElementById('confirmation-message');
+                        
+                        if (payment.status === 'success' || payment.status === 'confirmed') {
+                            statusIcon.textContent = '✅';
+                            statusTitle.textContent = 'Platba byla úspěšná!';
+                            statusTitle.className = 'success';
+                            statusMessage.textContent = 'Děkujeme za vaši objednávku. Vaše platba byla zpracována úspěšně.';
+                            statusBadge.textContent = 'ÚSPĚŠNÁ';
+                            statusBadge.className = 'payment-status status-success';
+                            confirmationMessage.textContent = 'Potvrzení o platbě vám bylo odesláno na email.';
+                        } else if (payment.status === 'failed' || payment.status === 'declined') {
+                            statusIcon.textContent = '❌';
+                            statusIcon.className = 'error-icon';
+                            statusTitle.textContent = 'Platba selhala';
+                            statusTitle.className = 'error';
+                            statusMessage.textContent = 'Bohužel se platba nezdařila. Zkuste to prosím znovu.';
+                            statusBadge.textContent = 'SELHALA';
+                            statusBadge.className = 'payment-status status-failed';
+                            confirmationMessage.textContent = 'Kontaktujte podporu pro další informace.';
+                        } else if (payment.status === 'pending') {
+                            statusIcon.textContent = '⏳';
+                            statusIcon.className = 'pending-icon';
+                            statusTitle.textContent = 'Platba se zpracovává';
+                            statusTitle.className = 'pending';
+                            statusMessage.textContent = 'Vaše platba se stále zpracovává. Prosím vyčkejte.';
+                            statusBadge.textContent = 'ČEKÁ';
+                            statusBadge.className = 'payment-status status-pending';
+                            confirmationMessage.textContent = 'Budete informováni o stavu platby.';
+                        } else {
+                            statusIcon.textContent = '❓';
+                            statusTitle.textContent = 'Neznámý stav platby';
+                            statusMessage.textContent = 'Stav platby není znám.';
+                            statusBadge.textContent = 'NEZNÁMÝ';
+                            statusBadge.className = 'payment-status status-failed';
+                            confirmationMessage.textContent = 'Kontaktujte podporu pro další informace.';
+                        }
+                        
+                        // Fill in payment details
+                        document.getElementById('session-id').textContent = payment.sessionId || sessionId;
+                        document.getElementById('gateway').textContent = payment.gateway.toUpperCase();
+                        document.getElementById('amount').textContent = (payment.amount / 100).toFixed(2);
+                        document.getElementById('currency').textContent = payment.currency.toUpperCase();
+                        document.getElementById('customer-email').textContent = payment.customerEmail || 'Není uveden';
+                        document.getElementById('created-time').textContent = new Date(payment.createdAt).toLocaleString('cs-CZ');
+                        document.getElementById('updated-time').textContent = new Date(payment.updatedAt).toLocaleString('cs-CZ');
+                        
+                        // Show content
+                        document.getElementById('payment-content').style.display = 'block';
+                        document.getElementById('loading').style.display = 'none';
+                        
+                        console.log('Successfully loaded payment info');
+                    } else {
+                        showError('Platba nebyla nalezena nebo došlo k chybě.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading payment info:', error);
+                    showError('Nepodařilo se načíst informace o platbě.');
+                });
+        }
+        
+        function showError(message) {
+            document.getElementById('payment-content').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('status-icon').textContent = '❌';
+            document.getElementById('status-icon').className = 'error-icon';
+            document.getElementById('status-title').textContent = 'Chyba';
+            document.getElementById('status-title').className = 'error';
+            document.getElementById('status-message').textContent = message;
+            document.getElementById('status-badge').textContent = 'CHYBA';
+            document.getElementById('status-badge').className = 'payment-status status-failed';
+        }
+        
+        // Load payment info when page loads
+        console.log('Starting to load payment info...');
+        loadPaymentInfo();
+    </script>
+</body>
+</html> 

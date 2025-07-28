@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Přehled plateb</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 150px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .payments-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .table-header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .table-content {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .gateway-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .gateway-stripe {
+            background: #6772e5;
+            color: white;
+        }
+        .gateway-paypal {
+            background: #0070ba;
+            color: white;
+        }
+        .gateway-gopay {
+            background: #00a651;
+            color: white;
+        }
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #218838;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .no-payments {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Admin Panel - Přehled plateb</h1>
+        <p>Správa a monitoring všech plateb v systému</p>
+    </div>
+
+    <button class="refresh-btn" onclick="loadPayments()">🔄 Obnovit data</button>
+
+    <div class="stats" id="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="total-payments">-</div>
+            <div class="stat-label">Celkem plateb</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="success-payments">-</div>
+            <div class="stat-label">Úspěšné</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="pending-payments">-</div>
+            <div class="stat-label">Čekající</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="failed-payments">-</div>
+            <div class="stat-label">Selhané</div>
+        </div>
+    </div>
+
+    <div class="payments-table">
+        <div class="table-header">
+            📊 Seznam všech plateb
+        </div>
+        <div class="table-content" id="table-content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Načítání plateb...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadPayments() {
+            try {
+                const response = await fetch('/api/payment/all');
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Check content type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server vrátil neplatný formát dat (očekáván JSON)');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Nepodařilo se načíst platby');
+                }
+                
+                const payments = data.payments || [];
+                
+                // Update stats
+                updateStats(payments);
+                
+                // Update table
+                updateTable(payments);
+                
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                document.getElementById('table-content').innerHTML = `
+                    <div class="no-payments">
+                        <h3>❌ Chyba při načítání</h3>
+                        <p>${error.message}</p>
+                        <p><small>Zkuste obnovit stránku nebo kontaktujte administrátora.</small></p>
+                    </div>
+                `;
+            }
+        }
+        
+        function updateStats(payments) {
+            const total = payments.length;
+            const success = payments.filter(p => p.status === 'success').length;
+            const pending = payments.filter(p => p.status === 'pending').length;
+            const failed = payments.filter(p => p.status === 'failed').length;
+            
+            document.getElementById('total-payments').textContent = total;
+            document.getElementById('success-payments').textContent = success;
+            document.getElementById('pending-payments').textContent = pending;
+            document.getElementById('failed-payments').textContent = failed;
+        }
+        
+        function updateTable(payments) {
+            if (payments.length === 0) {
+                document.getElementById('table-content').innerHTML = `
+                    <div class="no-payments">
+                        <h3>📭 Žádné platby</h3>
+                        <p>Zatím nebyly vytvořeny žádné platby.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Platební brána</th>
+                            <th>Částka</th>
+                            <th>Status</th>
+                            <th>Email</th>
+                            <th>Vytvořeno</th>
+                            <th>Aktualizováno</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${payments.map(payment => `
+                            <tr>
+                                <td>
+                                    <strong>${payment.paymentId}</strong><br>
+                                    <small>${payment.id}</small>
+                                </td>
+                                <td>
+                                    <span class="gateway-badge gateway-${payment.gateway}">
+                                        ${payment.gateway.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>${(payment.amount / 100).toFixed(2)}</strong><br>
+                                    <small>${payment.currency.toUpperCase()}</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-${payment.status}">
+                                        ${getStatusText(payment.status)}
+                                    </span>
+                                </td>
+                                <td>${payment.customerEmail || '-'}</td>
+                                <td>${formatDate(payment.createdAt)}</td>
+                                <td>${formatDate(payment.updatedAt)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('table-content').innerHTML = tableHTML;
+        }
+        
+        function getStatusText(status) {
+            switch (status) {
+                case 'success': return 'ÚSPĚŠNÁ';
+                case 'failed': return 'SELHALA';
+                case 'pending': return 'ČEKÁ';
+                default: return status.toUpperCase();
+            }
+        }
+        
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString('cs-CZ');
+        }
+        
+        // Load payments when page loads
+        loadPayments();
+    </script>
+</body>
+</html> 

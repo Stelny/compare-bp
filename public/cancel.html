@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platba zrušena</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .cancel-card {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .cancel-icon {
+            color: #dc3545;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .back-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .back-button:hover {
+            background: #0056b3;
+        }
+        .retry-button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+        .retry-button:hover {
+            background: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <div class="cancel-card">
+        <div class="cancel-icon">❌</div>
+        <h1>Platba byla zrušena</h1>
+        <p>Vaše platba nebyla dokončena. Můžete to zkusit znovu nebo se vrátit na hlavní stránku.</p>
+        
+        <div class="details">
+            <h3>Možné důvody zrušení:</h3>
+            <ul>
+                <li>Zrušili jste platbu ručně</li>
+                <li>Vypršel časový limit</li>
+                <li>Došlo k technické chybě</li>
+            </ul>
+        </div>
+        
+        <a href="/" class="back-button">Zpět na hlavní stránku</a>
+        <a href="/" class="retry-button">Zkusit znovu</a>
+    </div>
+</body>
+</html> 

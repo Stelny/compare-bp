@@ -1,0 +1,39 @@
+{
+  "name": "compare-bp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/app.ts",
+    "dev": "nodemon --exec ts-node src/app.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:db": "node test-database.js",
+    "stripe:listen": "ts-node src/controllers/stripe-webhook.ts",
+    "paypal:listen": "ts-node src/controllers/paypal-webhook.ts",
+    "gopay:listen": "ts-node src/controllers/gopay-webhook.ts",
+    "webhook:dev": "nodemon --exec ts-node src/controllers/stripe-webhook.ts",
+    "webhook:all": "concurrently \"npm run stripe:listen\" \"npm run paypal:listen\" \"npm run gopay:listen\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "@paypal/paypal-server-sdk": "^1.1.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "@types/sqlite3": "^5.1.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "gopay-nodejs": "^1.2.2",
+    "sqlite3": "^5.1.7",
+    "stripe": "^18.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.1.10"
+  }
+}
